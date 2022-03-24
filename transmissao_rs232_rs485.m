@@ -13,7 +13,7 @@ clc, close all, clear all
 M = 2; % Nível de Modulação (Mapeamento para codificação digital)
 nsamp = 4; % Fator de reamostragem
 snr = 12; % Relação sinal ruído (dado em 3db / Dobro da potencia)
-nData = 10e3;
+nData = 10e5;
 
 
 %% .................  Transmissão  ......................................... 
@@ -21,10 +21,10 @@ nData = 10e3;
 %Geração de dados aleatórios
 data_in = randi([0 M-1], nData, 1);
 
-% % Conversão de bits em pulsos
-% x_pulse = pammod(dataIn, M); 
+% Conversão de bits em pulsos
+x_pulse = pammod(data_in, M); 
 
-x_pulse = data_in
+% x_pulse = data_in % Sem modulação
 
 % Conformação de pulso (Pulse Shaping) - Super Amostragem (Upsampling)
 x_up = rectpulse(x_pulse, nsamp); % Filtro Retangular
@@ -55,22 +55,22 @@ end
 % Deconformação de pulso
 x_dp = intdump(x_up_filtrado, nsamp);
 
-% % Conversão de pulsos em bits
-% img_Rx_bin = pamdemod(x_dp, M);
+% Conversão de pulsos em bits
+data_out = pamdemod(x_dp, M);
 
-data_out
+% data_out = x_dp % Sem modulação
 
 % Calculo do BER do dado transmitido
 bits_errados = 0;
 i = 1;
-while i <= length(img_Tx_bin)
-    if (img_Tx_bin(i) ~= img_Rx_bin(i))
+while i <= length(data_in)
+    if (data_in(i) ~= data_out(i))
         bits_errados = bits_errados + 1;
     end
     i = i + 1;
 end
 format shortEng
-BER = (bits_errados / length(img_Tx_bin)) % Calculo de BER
+BER = (bits_errados / length(data_in)) % Calculo de BER
 
 
 
