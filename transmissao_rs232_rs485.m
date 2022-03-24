@@ -19,8 +19,6 @@ Ts = 1/Rs;          % Duração no tempo de cada símbolo
 nsamp = 4;          % Fator de reamostragem
 snr = 6;            % Relação sinal ruído (dado em 3db / Dobro da potencia)
 nData = 16*1024;    % Número de bits a serem transmitidos = 16kb
-% nData = 16;       % Número de bits a serem transmitidos = 16 bits
-% Tsim = nData*Tb;    % Tempo total da simulação = nbits * tempo_bit
 
 % .................  Cálculo de variáveis iniciais  ......................
 t = linspace(0,Ts*((nData-1)*nsamp), nData*nsamp).';
@@ -31,28 +29,33 @@ t = linspace(0,Ts*((nData-1)*nsamp), nData*nsamp).';
 %Geração de dados aleatórios
 data_in = randi([0 M-1], nData, 1);
 
-% % Conversão de bits em pulsos
-% x_pulse = pammod(data_in, M); 
-
 x_pulse = data_in; % Sinal bruto, sem modulação
 
 % Conformação de pulso (Pulse Shaping) - Super Amostragem (Upsampling)
 x_up = rectpulse(x_pulse, nsamp); % Filtro Retangular
 
-% Codificação diferencial RS-485
+    % Codificação diferencial RS-485
 x_b = double( x_up);
 x_a = double(~x_up);
 
 %% -----------------  Canal  -----------------------------------------------
 % Adicionando Ruído
-x_b_noise = awgn(x_b,snr,'measured');
-x_a_noise = awgn(x_a,snr,'measured');
+
+% Objeto aleatório
+S = RandStream('mt19937ar','Seed',5489);
+
+x_b_noise = awgn(x_b,snr,'measured', S);
+reset(S)
+x_a_noise = awgn(x_a,snr,'measured', S);
 
 % -------------------------------------------------------------------------
 
 %% ................. Recepção ..............................................
 
 len = length(x_a_noise);
+
+% Filtro linear
+% threshold
 
 % Decodificação diferenial
 for i = 1:len
@@ -67,8 +70,6 @@ end
 % Deconformação de pulso
 x_dp = intdump(x_up_filtrado, nsamp);
 
-% % Conversão de pulsos em bits
-% data_out = pamdemod(x_dp, M);
 
 data_out = x_dp; % Sinal bruto, sem modulação
 
@@ -89,36 +90,33 @@ BER = (bits_errados / length(data_in)); % Calculo de BER
 
 %% +++++++++++++++++++  Plotagens  +++++++++++++++++++++++++++++++++++++++++
 
+% Limites do gráfico
+xMax = 0.5e-4
+
 % Exibição do canal de transmissão A
 figure;
-plot(x_a,'LineWidth',0.5);
+plot(t, x_a,'LineWidth',0.5);
 hold all;
-plot(x_a_noise),xlim([0 200]), ylim([-2 2]), title('Canal A');
+plot(t, x_a_noise);
+xlim([0 xMax])
+ylim([-1.5 2]) 
+title('Canal A');
 
 % Exibição do canal de transmissão B
 figure;
-plot(x_b,'LineWidth',0.5);
+plot(t, x_b,'LineWidth',0.5);
 hold all;
-plot(x_b_noise),xlim([0 200]), ylim([-2 2]), title('Canal B');
+plot(t, x_b_noise)
+xlim([0 xMax])
+ylim([-1.5 2])
+title('Canal B');
 
 % Exibição dos sinais transmitido e recebido
 figure;
-plot(x_up,'LineWidth',0.5);
+plot(t, x_up,'LineWidth',0.5);
 hold all;
-plot(x_dp),xlim([0 200]), ylim([-2 2]), title('Sinal Transmitido e recebido');
+plot(t, x_up_filtrado)
+xlim([0 xMax])
+ylim([-1.5 2])
+title('Sinal Transmitido e recebido');
 legend('Sinal Transmitido','Sinal Recebido')
-
-
-% % Exibição dos pulsos no sistema de comunicação
-% figure;
-% subplot(3,1,1), plot(x_up), xlim([0 200]), ylim([-1.5 1.5]), title('Transmissão');
-% subplot(3,1,2), hold on, plot(x_up),plot(x_up_noise), xlim([0 200]), ylim([-1.5 1.5]), title('Canal - (Pulso + AWGN)');
-% subplot(3,1,3), plot(x_up_filtrado,'Color','green'), xlim([0 200]), ylim([-1.5 1.5]), title('Recepção');
-% 
-% 
-% % Plotagem do Diagrama de Olho da saída do canal
-% eyediagram(x_up_noise(1:end/10000), 3)
-
-
-
-
