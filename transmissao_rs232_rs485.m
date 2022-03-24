@@ -91,7 +91,7 @@ BER = (bits_errados / length(data_in)); % Calculo de BER
 %% +++++++++++++++++++  Plotagens  +++++++++++++++++++++++++++++++++++++++++
 
 % Limites do gráfico
-xMax = 0.5e-4
+xMax = 0.2e-4
 
 % Exibição do canal de transmissão A
 figure;
